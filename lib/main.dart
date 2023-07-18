@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:video_player/video_player.dart';
 
 void main() {
   runApp(const MyApp());
@@ -58,6 +59,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   XFile? _image;
+  VideoPlayerController? _controller;
   final imagePicker = ImagePicker();
 
   // カメラから写真を取得するメソッド
@@ -66,6 +68,7 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       if (pickedFile != null) {
         _image = XFile(pickedFile.path);
+        _controller = null;
       }
     });
   }
@@ -76,8 +79,51 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       if (pickedFile != null) {
         _image = XFile(pickedFile.path);
+        _controller = null;
       }
     });
+  }
+
+  // カメラから動画を取得するメソッド
+  Future getVideoFromCamera() async {
+    XFile? pickedFile = await imagePicker.pickVideo(source: ImageSource.camera);
+    if (pickedFile != null) {
+      _controller = VideoPlayerController.file(File(pickedFile.path));
+      _controller!.initialize().then((_) {
+        setState(() {
+          _image = null;
+          _controller!.play();
+        });
+      });
+    }
+  }
+
+  // ギャラリーから動画を取得するメソッド
+  Future getVideoFromGarally() async {
+    XFile? pickedFile = await imagePicker.pickVideo(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      _controller = VideoPlayerController.file(File(pickedFile.path));
+      _controller!.initialize().then((_) {
+        setState(() {
+          _image = null;
+          _controller!.play();
+        });
+      });
+    }
+  }
+
+  // 選択されている写真か動画があれば表示する
+  Widget displayContent() {
+    if (_image != null) {
+      return Image.file(File(_image!.path));
+    }
+    if (_controller != null) {
+      return VideoPlayer(_controller!);
+    }
+    return Text(
+      '写真か画像を選択してください',
+      style: Theme.of(context).textTheme.headlineMedium,
+    );
   }
 
   @override
@@ -101,24 +147,32 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
-        child: _image == null
-          ? Text('写真を選択してください', style: Theme.of(context).textTheme.headlineMedium,)
-          : Image.file(File(_image!.path)),
+        child: displayContent(),
       ),
       floatingActionButton:
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            // カメラから取得するボタン
+            // カメラから画像を取得するボタン
             FloatingActionButton(
               onPressed: getImageFromCamera,
               child: const Icon(Icons.photo_camera),
             ),
-            // ギャラリーから取得するボタン
+            // ギャラリーから画像を取得するボタン
             FloatingActionButton(
               onPressed: getImageFromGarally,
               child: const Icon(Icons.photo_album),
-            )
+            ),
+            // カメラから動画を取得するボタン
+            FloatingActionButton(
+              onPressed: getVideoFromCamera,
+              child: const Icon(Icons.video_call),
+            ),
+            // ギャラリーから動画を取得するボタン
+            FloatingActionButton(
+              onPressed: getVideoFromGarally,
+              child: const Icon(Icons.movie_creation),
+            ),
           ],
         )
       , // This trailing comma makes auto-formatting nicer for build methods.
